@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "koko": "git clone https://github.com/mahmoudfarahat2647/koko.git && cd koko && npm install && npm run dev"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.81.5",
