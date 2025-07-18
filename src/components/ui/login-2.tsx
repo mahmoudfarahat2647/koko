@@ -166,6 +166,55 @@ const Logo = (props: React.JSX.IntrinsicAttributes & React.SVGProps<SVGSVGElemen
 
 
 export default function Login04() {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [isSignUp, setIsSignUp] = React.useState(true); // Set to true for sign-up initially
+
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    const url = isSignUp
+      ? "http://localhost:8000/api/v1/auth/register"
+      : "http://localhost:8000/api/v1/auth/login";
+    const body = isSignUp
+      ? JSON.stringify({ email, password, name })
+      : JSON.stringify({ email, password });
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: body,
+      });
+
+      const data = await response.json();
+      console.log("Backend response:", data);
+
+      if (response.ok) {
+        // Store the token
+        localStorage.setItem('authToken', data.data.token);
+        
+        // Redirect to home page
+        window.location.href = '/'; // Redirect to home page
+      } else {
+        setError(data.error?.message || "Something went wrong");
+      }
+    } catch (error) {
+      console.error("Error during authentication:", error);
+      setError("Network error or server is unreachable.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="flex flex-1 flex-col justify-center px-4 py-10 lg:px-6">
@@ -180,15 +229,16 @@ export default function Login04() {
             </p>
           </div>
           <h3 className="mt-6 text-lg font-semibold text-foreground dark:text-foreground">
-            Sign in to your account
+            {isSignUp ? "Create your account" : "Sign in to your account"}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
-            Don't have an account?{" "}
+            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
             <a
               href="#"
+              onClick={() => setIsSignUp(!isSignUp)}
               className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
             >
-              Sign up
+              {isSignUp ? "Sign in" : "Sign up"}
             </a>
           </p>
           <div className="mt-8 flex flex-col items-center space-y-2 sm:flex-row sm:space-x-4 sm:space-y-0">
@@ -197,7 +247,8 @@ export default function Login04() {
               className="flex-1 items-center justify-center space-x-2 py-2"
               asChild
             >
-              <a href="#">
+              {/* CORRECTED: Point this to your backend's GitHub OAuth initiation endpoint */}
+              <a href="http://localhost:8000/api/v1/auth/github">
                 <GitHubIcon className="size-5" aria-hidden={true} />
                 <span className="text-sm font-medium">Login with GitHub</span>
               </a>
@@ -207,7 +258,8 @@ export default function Login04() {
               className="mt-2 flex-1 items-center justify-center space-x-2 py-2 sm:mt-0"
               asChild
             >
-              <a href="#">
+              {/* CORRECTED: Point this to your backend's Google OAuth initiation endpoint */}
+              <a href="http://localhost:8000/api/v1/auth/google">
                 <GoogleIcon className="size-4" aria-hidden={true} />
                 <span className="text-sm font-medium">Login with Google</span>
               </a>
@@ -225,7 +277,36 @@ export default function Login04() {
             </div>
           </div>
 
-          <form action="#" method="post" className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {error && (
+              <div className="rounded-md bg-red-50 p-4 border border-red-200">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isSignUp && (
+              <div>
+                <Label
+                  htmlFor="name-signup-04"
+                  className="text-sm font-medium text-foreground dark:text-foreground"
+                >
+                  Name
+                </Label>
+                <Input
+                  type="text"
+                  id="name-signup-04"
+                  name="name-signup-04"
+                  autoComplete="name"
+                  placeholder="John Doe"
+                  className="mt-2"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            )}
             <div>
               <Label
                 htmlFor="email-login-04"
@@ -240,6 +321,8 @@ export default function Login04() {
                 autoComplete="email"
                 placeholder="user@promptbox.com"
                 className="mt-2"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
@@ -253,13 +336,15 @@ export default function Login04() {
                 type="password"
                 id="password-login-04"
                 name="password-login-04"
-                autoComplete="password"
+                autoComplete="current-password"
                 placeholder="********"
                 className="mt-2"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="mt-4 w-full py-2 font-medium">
-              Sign in
+            <Button type="submit" className="mt-4 w-full py-2 font-medium" disabled={isLoading}>
+              {isLoading ? "Loading..." : (isSignUp ? "Sign up" : "Sign in")}
             </Button>
           </form>
           <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground">
