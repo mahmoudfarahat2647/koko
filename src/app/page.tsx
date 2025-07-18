@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import CreatePromptModal from '../components/CreatePromptModal';
 import { getSpecificTagColor } from '../lib/tagColors';
+import Link from 'next/link';
 
 interface PromptCard {
   id: number;
@@ -219,7 +220,9 @@ export default function Home() {
                 <Moon className="w-6 h-6" />
               )}
             </button>
-            <User className="w-8 h-8 cursor-pointer hover:text-primary transition-colors" />
+            <Link href="/login" className="p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors" title="Login">
+              <User className="w-6 h-6" />
+            </Link>
           </div>
       </header>
 
