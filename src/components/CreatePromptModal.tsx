@@ -9,6 +9,7 @@ import {
   Check,
   Plus
 } from 'lucide-react';
+import { getSpecificTagColor } from '../lib/tagColors';
 
 interface CreatePromptModalProps {
   onClose: () => void;
@@ -25,19 +26,27 @@ interface CreatePromptModalProps {
     };
     format: string;
   }) => void;
+  editingPrompt?: {
+    id: number;
+    title: string;
+    description: string;
+    category: string;
+    tags: string[];
+    rating: number;
+  } | null;
 }
 
 type TabType = 'prompt' | 'example' | 'howToUse';
 type FormatType = 'json' | 'markdown' | 'xml' | 'yaml' | 'csv';
 
-const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }) => {
+const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave, editingPrompt }) => {
   const [activeTab, setActiveTab] = useState<TabType>('prompt');
   const [format, setFormat] = useState<FormatType>('json');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [title, setTitle] = useState(editingPrompt?.title || '');
+  const [description, setDescription] = useState(editingPrompt?.description || '');
+  const [category, setCategory] = useState(editingPrompt?.category || '');
+  const [tags, setTags] = useState<string[]>(editingPrompt?.tags || []);
   const [newTag, setNewTag] = useState('');
   const [content, setContent] = useState({
     prompt: '',
@@ -99,7 +108,7 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
       description,
       category: category || 'general',
       tags,
-      rating: 0,
+      rating: editingPrompt?.rating || 0,
       content,
       format
     });
@@ -190,21 +199,21 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`bg-white rounded-lg shadow-xl ${isFullscreen ? 'w-full h-full' : 'w-full max-w-4xl h-[90vh]'} flex flex-col`}>
+      <div className={`bg-card rounded-lg shadow-xl ${isFullscreen ? 'w-full h-full' : 'w-full max-w-4xl h-[90vh]'} flex flex-col`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Create New Prompt</h2>
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-xl font-bold text-card-foreground">{editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}</h2>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors"
               title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             >
               {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors"
               title="Close"
             >
               <X className="w-5 h-5" />
@@ -218,22 +227,22 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
             {/* Title and Description */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                <label className="block text-sm font-medium text-card-foreground mb-2">Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter prompt title..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-card-foreground mb-2">Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full px-3 py-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                   placeholder="Enter prompt description..."
                 />
               </div>
@@ -241,15 +250,15 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
 
             {/* Tabbed Code Editor */}
             <div className="space-y-4">
-              <div className="flex flex-wrap border-b border-gray-200">
+              <div className="flex flex-wrap border-b border-border">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-4 py-2 text-sm font-medium transition-colors ${
                       activeTab === tab.id
-                        ? 'border-b-2 border-blue-500 text-blue-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-primary text-primary'
+                        : 'text-muted-foreground hover:text-card-foreground'
                     }`}
                   >
                     {tab.label}
@@ -262,27 +271,27 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
                 <div className="absolute top-3 right-3 flex space-x-2 z-10">
                   <button
                     onClick={handleCopy}
-                    className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+                    className="p-2 rounded-md bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
                     title="Copy"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+                    className="p-2 rounded-md bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors"
                     title="Fullscreen"
                   >
                     <Maximize className="w-4 h-4" />
                   </button>
                 </div>
                 
-                <div className="bg-gray-900 rounded-lg p-4 min-h-[300px] font-mono text-sm overflow-auto">
+                <div className="bg-muted rounded-lg p-4 min-h-[300px] font-mono text-sm overflow-auto">
                   <textarea
                     ref={textareaRef}
                     value={currentContent}
                     onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Start typing your prompt here..."
-                    className="w-full h-full min-h-[250px] bg-transparent text-green-400 placeholder-gray-500 resize-none focus:outline-none"
+                    className="w-full h-full min-h-[250px] bg-transparent text-primary placeholder-muted-foreground resize-none focus:outline-none"
                     style={{
                       fontFamily: 'Monaco, Consolas, "Lucida Console", monospace',
                       fontSize: '14px',
@@ -296,7 +305,7 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
 
             {/* Structure Format Selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Structure Format:</label>
+              <label className="block text-sm font-medium text-card-foreground mb-2">Structure Format:</label>
               <div className="flex flex-wrap gap-2">
                 {formats.map((formatOption) => (
                   <button
@@ -304,8 +313,8 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
                     onClick={() => handleFormatChange(formatOption)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       format === formatOption
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                     }`}
                   >
                     {formatOption}
@@ -316,20 +325,20 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category:</label>
+              <label className="block text-sm font-medium text-card-foreground mb-2">Category:</label>
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter category..."
                 />
                 {category && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent text-accent-foreground">
                     {category}
                     <X 
-                      className="ml-2 w-3 h-3 cursor-pointer hover:text-purple-600" 
+                      className="ml-2 w-3 h-3 cursor-pointer hover:text-primary" 
                       onClick={() => setCategory('')}
                     />
                   </span>
@@ -339,13 +348,13 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tags:</label>
+              <label className="block text-sm font-medium text-card-foreground mb-2">Tags:</label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                  <span key={tag} className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSpecificTagColor(tag)}`}>
                     {tag}
                     <X 
-                      className="ml-2 w-3 h-3 cursor-pointer hover:text-yellow-600" 
+                      className="ml-2 w-3 h-3 cursor-pointer hover:opacity-80" 
                       onClick={() => handleRemoveTag(tag)}
                     />
                   </span>
@@ -357,12 +366,12 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Add a tag and press Enter..."
                 />
                 <button
                   onClick={handleAddTag}
-                  className="p-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                  className="p-2 rounded-md bg-primary hover:bg-primary/80 text-primary-foreground transition-colors"
                   title="Add Tag"
                 >
                   <Plus className="w-4 h-4" />
@@ -373,10 +382,10 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 flex justify-end">
+        <div className="p-4 border-t border-border flex justify-end">
           <button
             onClick={handleSave}
-            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center space-x-2"
+            className="px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-medium transition-colors flex items-center space-x-2"
           >
             <Check className="w-4 h-4" />
             <span>Save</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Star, 
   Share2, 
@@ -10,9 +10,12 @@ import {
   User, 
   Search,
   X,
-  Plus
+  Plus,
+  Sun,
+  Moon
 } from 'lucide-react';
 import CreatePromptModal from '../components/CreatePromptModal';
+import { getSpecificTagColor } from '../lib/tagColors';
 
 interface PromptCard {
   id: number;
@@ -99,6 +102,8 @@ export default function Home() {
   const [selectedTag, setSelectedTag] = useState('ALL');
   const [prompts, setPrompts] = useState(dummyData);
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<PromptCard | null>(null);
 
   const filteredPrompts = prompts.filter(prompt => {
     const matchesSearch = prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,7 +126,6 @@ export default function Home() {
 
   const handleCopy = (prompt: PromptCard) => {
     navigator.clipboard.writeText(`${prompt.title}: ${prompt.description}`);
-    alert('Prompt copied to clipboard!');
   };
 
   const handleShare = (prompt: PromptCard) => {
@@ -137,7 +141,8 @@ export default function Home() {
   };
 
   const handleEdit = (prompt: PromptCard) => {
-    alert(`Edit functionality for "${prompt.title}" would be implemented here`);
+    setShowCreatePrompt(true);
+    setEditingPrompt(prompt);
   };
 
   const renderStars = (rating: number, promptId: number) => {
@@ -147,7 +152,7 @@ export default function Home() {
         <Star
           key={index}
           className={`w-4 h-4 cursor-pointer transition-colors ${
-            starNumber <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+            starNumber <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'
           }`}
           onClick={() => handleRatingChange(promptId, starNumber)}
         />
@@ -159,30 +164,69 @@ export default function Home() {
     alert(`Remove ${type} chip functionality would be implemented here`);
   };
 
+  // Theme toggle functionality
+  useEffect(() => {
+    // Check for saved theme preference or default to light mode
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    
+    if (newTheme) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+
   return (
-    <main className="flex flex-col min-h-screen bg-gray-50">
+    <main className="flex flex-col min-h-screen bg-background">
       {/* Header Section */}
-      <header className="flex flex-col md:flex-row justify-between items-center p-4 bg-slate-800 text-white shadow-lg">
+      <header className="flex flex-col md:flex-row justify-between items-center p-4 bg-card text-card-foreground shadow-lg">
         <h1 className="text-3xl font-bold mb-2 md:mb-0">PROMPTBOX</h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search prompts..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64 placeholder:text-muted-foreground"
-            />
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search prompts..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64 placeholder:text-muted-foreground"
+              />
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDarkMode ? (
+                <Sun className="w-6 h-6" />
+              ) : (
+                <Moon className="w-6 h-6" />
+              )}
+            </button>
+            <User className="w-8 h-8 cursor-pointer hover:text-primary transition-colors" />
           </div>
-          <User className="w-8 h-8 cursor-pointer hover:text-blue-300 transition-colors" />
-        </div>
       </header>
 
       {/* Filters Section */}
-      <section className="p-4 bg-white shadow-sm">
+      <section className="p-4 bg-card shadow-sm">
         <div className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Categories:</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">Categories:</h3>
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
               <button
@@ -190,8 +234,8 @@ export default function Home() {
                 onClick={() => setSelectedCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedCategory === category
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 {category}
@@ -200,7 +244,7 @@ export default function Home() {
           </div>
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Tags:</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-2">Tags:</h3>
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <button
@@ -208,8 +252,8 @@ export default function Home() {
                 onClick={() => setSelectedTag(tag)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedTag === tag
-                    ? 'bg-green-500 text-white'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 {tag}
@@ -223,7 +267,7 @@ export default function Home() {
       <section className="p-4 flex-1">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPrompts.map((prompt) => (
-            <div key={prompt.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-6">
+            <div key={prompt.id} className="bg-card text-card-foreground rounded-xl shadow-md hover:shadow-lg transition-shadow p-6 border border-border">
               {/* Rating */}
               <div className="flex items-center mb-3">
                 {renderStars(prompt.rating, prompt.id)}
@@ -231,10 +275,10 @@ export default function Home() {
               
               {/* Title Chip */}
               <div className="flex items-center justify-between mb-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground">
                   {prompt.title}
                   <X 
-                    className="ml-2 w-3 h-3 cursor-pointer hover:text-purple-600" 
+                    className="ml-2 w-3 h-3 cursor-pointer hover:text-primary/80" 
                     onClick={() => removeChip(prompt.id, 'title')}
                   />
                 </span>
@@ -242,12 +286,12 @@ export default function Home() {
               
               {/* Description Chip */}
               <div className="mb-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-muted text-muted-foreground">
                   {prompt.description.length > 50 
                     ? `${prompt.description.substring(0, 50)}...` 
                     : prompt.description}
                   <X 
-                    className="ml-2 w-3 h-3 cursor-pointer hover:text-gray-500" 
+                    className="ml-2 w-3 h-3 cursor-pointer hover:text-muted-foreground/80" 
                     onClick={() => removeChip(prompt.id, 'description')}
                   />
                 </span>
@@ -256,46 +300,46 @@ export default function Home() {
               {/* Tags and Category */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {prompt.tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <span key={tag} className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSpecificTagColor(tag)}`}>
                     {tag}
-                    <X className="ml-1 w-3 h-3 cursor-pointer hover:text-yellow-600" />
+                    <X className="ml-1 w-3 h-3 cursor-pointer hover:opacity-80" />
                   </span>
                 ))}
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
                   {prompt.category}
-                  <X className="ml-1 w-3 h-3 cursor-pointer hover:text-indigo-600" />
+                  <X className="ml-1 w-3 h-3 cursor-pointer hover:text-secondary-foreground/80" />
                 </span>
               </div>
               
               {/* Action Icons */}
-              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center pt-4 border-t border-border">
                 <button
                   onClick={() => handleDelete(prompt.id)}
-                  className="p-2 rounded-full hover:bg-red-100 transition-colors group"
+                  className="p-2 rounded-full hover:bg-destructive/10 transition-colors group"
                   title="Delete"
                 >
-                  <Trash2 className="w-4 h-4 text-gray-500 group-hover:text-red-500" />
+                  <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-destructive" />
                 </button>
                 <button
                   onClick={() => handleShare(prompt)}
-                  className="p-2 rounded-full hover:bg-blue-100 transition-colors group"
+                  className="p-2 rounded-full hover:bg-primary/10 transition-colors group"
                   title="Share"
                 >
-                  <Share2 className="w-4 h-4 text-gray-500 group-hover:text-blue-500" />
+                  <Share2 className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
                 </button>
                 <button
                   onClick={() => handleEdit(prompt)}
-                  className="p-2 rounded-full hover:bg-green-100 transition-colors group"
+                  className="p-2 rounded-full hover:bg-accent/10 transition-colors group"
                   title="Edit"
                 >
-                  <Edit3 className="w-4 h-4 text-gray-500 group-hover:text-green-500" />
+                  <Edit3 className="w-4 h-4 text-muted-foreground group-hover:text-accent" />
                 </button>
                 <button
                   onClick={() => handleCopy(prompt)}
-                  className="p-2 rounded-full hover:bg-purple-100 transition-colors group"
+                  className="p-2 rounded-full hover:bg-secondary/10 transition-colors group"
                   title="Copy"
                 >
-                  <Copy className="w-4 h-4 text-gray-500 group-hover:text-purple-500" />
+                  <Copy className="w-4 h-4 text-muted-foreground group-hover:text-secondary" />
                 </button>
               </div>
             </div>
@@ -304,15 +348,18 @@ export default function Home() {
         
         {filteredPrompts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No prompts found matching your criteria.</p>
+            <p className="text-muted-foreground text-lg">No prompts found matching your criteria.</p>
           </div>
         )}
       </section>
 
       {/* Floating Create Button */}
       <button
-        onClick={() => setShowCreatePrompt(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group z-50"
+        onClick={() => {
+          setShowCreatePrompt(true);
+          setEditingPrompt(null);
+        }}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group z-50"
         title="Create New Prompt"
       >
         <Plus className="w-8 h-8 group-hover:scale-110 transition-transform" />
@@ -320,12 +367,23 @@ export default function Home() {
 
       {/* Create Prompt Modal */}
       {showCreatePrompt && (
-        <CreatePromptModal 
-          onClose={() => setShowCreatePrompt(false)} 
+<CreatePromptModal 
+          onClose={() => {
+            setShowCreatePrompt(false);
+            setEditingPrompt(null);
+          }}
           onSave={(newPrompt) => {
-            setPrompts([...prompts, { ...newPrompt, id: Date.now() }]);
+            if (editingPrompt) {
+              // Update existing prompt
+              setPrompts(prompts.map(p => p.id === editingPrompt.id ? { ...newPrompt, id: editingPrompt.id } : p));
+              setEditingPrompt(null);
+            } else {
+              // Add new prompt
+              setPrompts([...prompts, { ...newPrompt, id: Date.now() }]);
+            }
             setShowCreatePrompt(false);
           }}
+          editingPrompt={editingPrompt}
         />
       )}
     </main>
