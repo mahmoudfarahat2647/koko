@@ -9,8 +9,10 @@ import {
   Trash2, 
   User, 
   Search,
-  X
+  X,
+  Plus
 } from 'lucide-react';
+import CreatePromptModal from '../components/CreatePromptModal';
 
 interface PromptCard {
   id: number;
@@ -96,6 +98,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedTag, setSelectedTag] = useState('ALL');
   const [prompts, setPrompts] = useState(dummyData);
+  const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   const filteredPrompts = prompts.filter(prompt => {
     const matchesSearch = prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -305,6 +308,26 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Floating Create Button */}
+      <button
+        onClick={() => setShowCreatePrompt(true)}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group z-50"
+        title="Create New Prompt"
+      >
+        <Plus className="w-8 h-8 group-hover:scale-110 transition-transform" />
+      </button>
+
+      {/* Create Prompt Modal */}
+      {showCreatePrompt && (
+        <CreatePromptModal 
+          onClose={() => setShowCreatePrompt(false)} 
+          onSave={(newPrompt) => {
+            setPrompts([...prompts, { ...newPrompt, id: Date.now() }]);
+            setShowCreatePrompt(false);
+          }}
+        />
+      )}
     </main>
   );
 }
