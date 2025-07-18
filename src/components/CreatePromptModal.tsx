@@ -124,6 +124,51 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
     }
   };
 
+  const extractRawContent = (text: string, currentFormat: FormatType): string => {
+    if (!text) return '';
+    
+    try {
+      switch (currentFormat) {
+        case 'json':
+          const parsed = JSON.parse(text);
+          return parsed.prompt || text;
+        case 'markdown':
+          return text.replace(/^# Prompt\n\n/, '');
+        case 'xml':
+          const xmlMatch = text.match(/<content>(.*?)<\/content>/s);
+          return xmlMatch ? xmlMatch[1] : text;
+        case 'yaml':
+          const yamlMatch = text.match(/prompt: \|\n  (.*)/s);
+          return yamlMatch ? yamlMatch[1].replace(/\n  /g, '\n') : text;
+        case 'csv':
+          const csvMatch = text.match(/"prompt"\n"(.*)"/s);
+          return csvMatch ? csvMatch[1].replace(/""/g, '"') : text;
+        default:
+          return text;
+      }
+    } catch (error) {
+      // If parsing fails, return original text
+      return text;
+    }
+  };
+
+  const handleFormatChange = (newFormat: FormatType) => {
+    const currentText = content[activeTab];
+    setFormat(newFormat);
+    
+    // Apply formatting to the current content
+    if (currentText) {
+      // First extract raw content from current format
+      const rawContent = extractRawContent(currentText, format);
+      // Then apply new format
+      const formattedText = formatContent(rawContent, newFormat);
+      setContent(prev => ({
+        ...prev,
+        [activeTab]: formattedText
+      }));
+    }
+  };
+
   const getSyntaxHighlighting = (format: FormatType) => {
     switch (format) {
       case 'json':
@@ -142,7 +187,6 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
   };
 
   const currentContent = content[activeTab];
-  const formattedContent = formatContent(currentContent, format);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -248,17 +292,6 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
                 </div>
               </div>
 
-              {/* Format Preview */}
-              {currentContent && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Formatted Output:</h4>
-                  <pre className="bg-gray-100 p-3 rounded-md text-sm overflow-x-auto">
-                    <code className={getSyntaxHighlighting(format)}>
-                      {formattedContent}
-                    </code>
-                  </pre>
-                </div>
-              )}
             </div>
 
             {/* Structure Format Selector */}
@@ -268,7 +301,7 @@ const CreatePromptModal: React.FC<CreatePromptModalProps> = ({ onClose, onSave }
                 {formats.map((formatOption) => (
                   <button
                     key={formatOption}
-                    onClick={() => setFormat(formatOption)}
+                    onClick={() => handleFormatChange(formatOption)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       format === formatOption
                         ? 'bg-blue-500 text-white'
